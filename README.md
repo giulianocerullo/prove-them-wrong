@@ -35,5 +35,6 @@ To add or change phrases, edit the `PHRASES` list inside the HTML file.
 
 ## Credits
 
-- Timer inspired by [Age Timer](https://jacky-liang.github.io/age-timer/)
-- Phrase animation inspired by [why.com](https://why.com/)
+This project is inspired by **[Age Timer](https://jacky-liang.github.io/age-timer/) by Jacky Liang** (itself adapted from "Motivation" by maccman). The age display with 9 decimal places, shown as a superscript, follows that project. A credit link to it is also visible on the page and in the HTML source.
+
+The phrase typing animation is inspired by [why.com](https://why.com/).
