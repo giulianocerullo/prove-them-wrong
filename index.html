@@ -1,0 +1,1413 @@
+<!doctype html>
+<!--
+  Prove Them Wrong
+  Inspired by "Age Timer" by Jacky Liang — https://jacky-liang.github.io/age-timer/
+  (itself adapted from "Motivation" by maccman). The age display with 9 decimal
+  places follows that project. Phrase typing animation inspired by why.com.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Age timer with 9 decimals and motivational phrases. Inspired by Age Timer by Jacky Liang.">
+<meta name="credits" content="Inspired by Age Timer by Jacky Liang (https://jacky-liang.github.io/age-timer/)">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Prove Them Wrong</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Tema: segue automaticamente quello di sistema (chiaro/scuro) */
+  :root {
+    --bg: #f4f0e6;
+    --bg-glow: rgba(160, 130, 70, 0.10);
+    --hi: #1a1813;
+    --mid: rgba(26, 24, 19, 0.52);
+    --low: rgba(26, 24, 19, 0.14);
+    --gold: #9a7b3c;
+    --gold-hi: #8a6a2a;
+    --field: rgba(255, 255, 255, 0.7);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #080806;
+      --bg-glow: rgba(196, 170, 114, 0.07);
+      --hi: #f0ebe0;
+      --mid: rgba(240, 235, 224, 0.5);
+      --low: rgba(255, 255, 255, 0.12);
+      --gold: #c4aa72;
+      --gold-hi: #e0ca97;
+      --field: rgba(17, 17, 16, 0.86);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #080806;
+    --bg-glow: rgba(196, 170, 114, 0.07);
+    --hi: #f0ebe0;
+    --mid: rgba(240, 235, 224, 0.5);
+    --low: rgba(255, 255, 255, 0.12);
+    --gold: #c4aa72;
+    --gold-hi: #e0ca97;
+    --field: rgba(17, 17, 16, 0.86);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    background-image: radial-gradient(ellipse 70% 55% at 50% 45%, var(--bg-glow), transparent 70%);
+    color: var(--hi);
+    font-family: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    overflow: hidden;
+    transition: background-color .4s, color .4s;
+  }
+  main { width: min(820px, 100%); text-align: center; }
+
+  .label {
+    color: var(--mid);
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .38em;
+    text-transform: uppercase;
+    margin: 0 0 1.1rem;
+  }
+
+  /* ---------- Timer ---------- */
+  .count {
+    margin: 0;
+    font-family: "DM Sans", system-ui, sans-serif;
+    font-weight: 600;
+    font-size: clamp(4rem, 17vw, 8.5rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .count sup {
+    font-size: .38em;
+    margin-left: .08em;
+    letter-spacing: 0;
+    color: var(--gold);
+    vertical-align: super;
+  }
+
+  /* ---------- Frase (typing come why.com) ---------- */
+  .phrase-wrap {
+    display: grid;
+    place-items: center;
+    min-height: 4.6em;
+    margin: 2.4rem auto 0;
+    font-family: "EB Garamond", Georgia, "Times New Roman", serif;
+    font-size: clamp(1.55rem, 4.2vw, 2.6rem);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    line-height: 1.18;
+    text-wrap: balance;
+  }
+  .phrase { max-width: 650px; cursor: pointer; }
+  .phrase.is-typing::after {
+    content: "";
+    display: inline-block;
+    width: 1px;
+    height: .82em;
+    margin-left: .09em;
+    background: var(--gold-hi);
+    box-shadow: 0 0 8px rgba(196, 170, 114, .45);
+    vertical-align: -.03em;
+    animation: cursor .72s steps(1) infinite;
+  }
+  @keyframes cursor { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+
+  /* ---------- Setup ---------- */
+  #setup h1 {
+    font-family: "EB Garamond", Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(2rem, 6vw, 3.2rem);
+    letter-spacing: -0.02em;
+    margin: 0 0 2rem;
+  }
+  form {
+    display: flex;
+    gap: .6rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  input {
+    font: 500 1.05rem "DM Sans", system-ui, sans-serif;
+    color: var(--hi);
+    background: var(--field);
+    border: 1px solid var(--low);
+    border-radius: 999px;
+    padding: .8rem 1.3rem;
+    color-scheme: inherit;
+    outline: none;
+    transition: border-color .25s;
+  }
+  input:focus { border-color: var(--gold); }
+  button.primary {
+    font: 700 .72rem "DM Sans", system-ui, sans-serif;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--bg);
+    background: var(--hi);
+    border: 0;
+    border-radius: 999px;
+    padding: 0 1.6rem;
+    min-height: 48px;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  button.primary:hover { opacity: .85; }
+
+  .corner {
+    position: fixed;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    right: 16px;
+    display: flex;
+    gap: .4rem;
+  }
+  .corner button {
+    font: 700 .58rem "DM Sans", system-ui, sans-serif;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--mid);
+    background: transparent;
+    border: 1px solid var(--low);
+    border-radius: 999px;
+    padding: .55rem .9rem;
+    cursor: pointer;
+    transition: color .2s, border-color .2s;
+  }
+  .corner button:hover { color: var(--gold-hi); border-color: var(--gold); }
+
+  .credit {
+    position: fixed;
+    bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+    left: 16px;
+    margin: 0;
+    color: var(--mid);
+    font-size: .72rem;
+    line-height: 1.3;
+  }
+  .credit a {
+    color: var(--mid);
+    text-decoration: underline;
+    text-decoration-color: var(--low);
+    text-underline-offset: 3px;
+    transition: color .2s;
+  }
+  .credit a:hover { color: var(--gold-hi); }
+  @media (max-width: 560px) {
+    .credit { left: 0; right: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); text-align: center; }
+  }
+
+  [hidden] { display: none !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .phrase.is-typing::after { animation: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <section id="setup" hidden>
+    <p class="label">Prove them wrong</p>
+    <h1>When were you born?</h1>
+    <form id="dobForm">
+      <input type="date" id="dobDate" required aria-label="Date of birth">
+      <input type="time" id="dobTime" aria-label="Time of birth (optional)">
+      <button class="primary" type="submit">Start</button>
+    </form>
+  </section>
+
+  <section id="timer" hidden>
+    <p class="label">Age</p>
+    <h2 class="count" id="age" aria-label="Your age in years">0<sup>.000000000</sup></h2>
+    <div class="phrase-wrap">
+      <span class="phrase" id="phrase" aria-live="polite" title="Click for the next one"></span>
+    </div>
+  </section>
+</main>
+
+<p class="credit">Inspired by <a href="https://jacky-liang.github.io/age-timer/" target="_blank" rel="noopener">Age Timer</a> by Jacky Liang</p>
+
+<div class="corner" id="corner" hidden>
+  <button type="button" id="themeBtn" title="Theme">Auto</button>
+  <button type="button" id="resetBtn" title="Change date of birth">Reset</button>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- 1000 frasi ----------
+  const PHRASES = [
+    "Prove them wrong.",
+    "They doubted you. Good.",
+    "Let the results do the talking.",
+    "Silence the noise. Do the work.",
+    "Nobody is coming to save you.",
+    "Work while they sleep.",
+    "Be the one they didn't see coming.",
+    "Your only competition is yesterday.",
+    "Discipline beats motivation.",
+    "Make them watch.",
+    "Comfort is the enemy.",
+    "Start before you're ready.",
+    "Earn it. Every single day.",
+    "You don't need their permission.",
+    "Outwork your excuses.",
+    "Pressure is a privilege.",
+    "Stay hungry. Stay humble.",
+    "Be so good they can't ignore you.",
+    "This is your time. Use it.",
+    "Every second counts. Look.",
+    "Doubt them back.",
+    "Small steps. Every day. No exceptions.",
+    "The clock doesn't care about your excuses.",
+    "Your future self is watching.",
+    "Make today count.",
+    "Champions are built when no one is watching.",
+    "Hard work compounds.",
+    "Become undeniable.",
+    "They laughed. Keep going.",
+    "Quiet ambition. Loud results.",
+    "No shortcuts. No regrets.",
+    "Choose the hard thing.",
+    "Do it tired. Do it scared. Do it anyway.",
+    "You were built for this.",
+    "Stop waiting. Start doing.",
+    "Consistency is the cheat code.",
+    "Bet on yourself.",
+    "Fall seven times. Stand up eight.",
+    "Your story isn't over.",
+    "Turn doubt into fuel.",
+    "Respect is earned, not given.",
+    "Rest if you must. Never quit.",
+    "Show up. Again. And again.",
+    "The grind is the reward.",
+    "Win the morning. Win the day.",
+    "You are your only limit.",
+    "Make your comeback louder than your setback.",
+    "Talk less. Build more.",
+    "Pain is temporary. Pride is forever.",
+    "Don't wish for it. Work for it.",
+    "Excuses don't build empires.",
+    "Do what others won't.",
+    "Ordinary effort, ordinary results.",
+    "Raise your standards.",
+    "Be stubborn about your goals.",
+    "No one remembers who almost did it.",
+    "Rise. Grind. Repeat.",
+    "Your potential is not a ceiling.",
+    "Let them underestimate you.",
+    "Focus on the work, not the applause.",
+    "Greatness is a daily decision.",
+    "Hustle in silence.",
+    "Every rep counts.",
+    "Burn the boats.",
+    "Leave no doubt.",
+    "If it was easy, everyone would do it.",
+    "Don't stop when you're tired. Stop when you're done.",
+    "Make the impossible look inevitable.",
+    "Be relentless.",
+    "Time is the only currency. Spend it well.",
+    "Dream big. Work bigger.",
+    "Build the life they said you couldn't.",
+    "Results over reasons.",
+    "Keep your head down and your standards up.",
+    "Nothing changes if nothing changes.",
+    "Become the proof.",
+    "You've survived every bad day so far.",
+    "Act like it's already yours.",
+    "Doubters make the best audience.",
+    "Victory loves preparation.",
+    "Hunger is a superpower.",
+    "Do the boring work.",
+    "Average is a choice.",
+    "Shut up and show up.",
+    "One more. Always one more.",
+    "Your excuses are lying to you.",
+    "Get comfortable being uncomfortable.",
+    "The obstacle is the way.",
+    "Make yourself proud.",
+    "Prove yourself right.",
+    "Stay patient. Stay dangerous.",
+    "Don't count the days. Make the days count.",
+    "Fear is a compass. Walk toward it.",
+    "Move in silence. Let success make the noise.",
+    "Grit over talent.",
+    "Today is a rep.",
+    "Keep the promise you made to yourself.",
+    "No days off from becoming better.",
+    "Be the storm.",
+    "Nobody cares. Work harder.",
+    "Climb anyway.",
+    "Regret weighs more than effort.",
+    "Win in private.",
+    "Demand more of yourself.",
+    "The best revenge is massive success.",
+    "Stay locked in.",
+    "Your time is running. Are you?",
+    "The world rewards finishers.",
+    "Don't lower the goal. Raise the effort.",
+    "Hard choices, easy life.",
+    "Show them who you are.",
+    "Be the exception.",
+    "Never let the fire go out.",
+    "You owe yourself this.",
+    "Effort is never wasted.",
+    "One day or day one. You decide.",
+    "Pressure makes diamonds.",
+    "Don't explain. Execute.",
+    "Rewrite the ending.",
+    "Get better. Not bitter.",
+    "Let the clock chase you.",
+    "Chase the version of you they fear.",
+    "Hold the line.",
+    "Make it happen.",
+    "Your dreams don't work unless you do.",
+    "Embrace the struggle.",
+    "Do it for the ones who doubted.",
+    "Do it for the kid you used to be.",
+    "Stack your wins.",
+    "Be impossible to ignore.",
+    "Finish what you started.",
+    "Trust the process. Then outwork it.",
+    "Strong minds, quiet mouths.",
+    "Build in the dark. Shine in the light.",
+    "Losing is a lesson. Quitting is a habit.",
+    "No one owes you anything. Go get it.",
+    "You're not behind. You're building.",
+    "Plant the seed. Water it daily.",
+    "The ceiling is a lie.",
+    "Make doubt your fuel.",
+    "Turn 'not yet' into 'watch me'.",
+    "They said you couldn't. Watch.",
+    "This is the part where you don't quit.",
+    "Feed your focus. Starve your distractions.",
+    "Discipline is self-respect.",
+    "Fortune favors the relentless.",
+    "Go further than they expect.",
+    "Write your name in the record books.",
+    "Every expert was once a beginner.",
+    "Make 'later' happen now.",
+    "Stay the course.",
+    "Don't fold.",
+    "Outlast them.",
+    "Be your own reason.",
+    "Run your race.",
+    "Underdog until the scoreboard says otherwise.",
+    "Keep building. Keep proving.",
+    "The time will pass anyway. Use it.",
+    "You are not done yet.",
+    "Prove them wrong. Again.",
+    "They called it luck. Show them the work.",
+    "Your doubters are your best coaches.",
+    "Do it until it's done.",
+    "Wake up with purpose.",
+    "Let your work be loud.",
+    "Stay down only long enough to get up.",
+    "Don't break. Bend and rise.",
+    "The scoreboard settles everything.",
+    "Build a body of work.",
+    "Make your name mean something.",
+    "The finish line doesn't move. You do.",
+    "Discipline today, freedom tomorrow.",
+    "Be the hardest worker in the room.",
+    "If not now, when?",
+    "Be obsessed or be average.",
+    "Forget the shortcuts.",
+    "Grind now. Shine later.",
+    "You get what you work for, not what you wish for.",
+    "Excellence is a habit.",
+    "Don't settle.",
+    "They'll understand when it's done.",
+    "Say less. Do more.",
+    "Silent focus. Loud outcomes.",
+    "Do it with your whole heart.",
+    "Every day is a chance to prove it.",
+    "Effort is the only thing you control.",
+    "Make them rewrite their opinion.",
+    "Keep going. You're closer than you think.",
+    "Bad days build strong people.",
+    "Patience is part of the plan.",
+    "The work works.",
+    "Make your hours matter.",
+    "Prove it to yourself first.",
+    "Courage over comfort.",
+    "Character is built in the struggle.",
+    "Endure. Then excel.",
+    "Take the stairs.",
+    "Be harder to kill.",
+    "Stop asking. Start taking.",
+    "There is no finish line for growth.",
+    "Hunger beats talent when talent sleeps.",
+    "Stand tall in the storm.",
+    "Carry yourself like a champion.",
+    "Never let them define you.",
+    "Want it more than you fear it.",
+    "Stay sharp.",
+    "Doubt is just noise.",
+    "You are the author.",
+    "Your pace. Your path. Your win.",
+    "Make every second earn its place.",
+    "They see the result. You know the cost.",
+    "Today's pain, tomorrow's power.",
+    "Expect resistance. Push through it.",
+    "Champions keep playing until they get it right.",
+    "Do it for the long run.",
+    "Commit fully.",
+    "Half effort earns zero respect.",
+    "Fight for your future.",
+    "Let ambition lead.",
+    "Don't apologize for wanting more.",
+    "Outthink. Outwork. Outlast.",
+    "Go all in.",
+    "You only fail when you stop.",
+    "There is power in persistence.",
+    "The best is still ahead.",
+    "Do the work nobody claps for.",
+    "Tough times don't last. Tough people do.",
+    "Hold yourself accountable.",
+    "Leave it all on the field.",
+    "Make tomorrow jealous.",
+    "Be ruthless with your time.",
+    "Turn setbacks into setups.",
+    "The hard road leads somewhere.",
+    "Be steady. Be strong.",
+    "Never stop learning.",
+    "Keep score with yourself.",
+    "Push past the comfortable.",
+    "Strength grows in silence.",
+    "Stay in the fight.",
+    "Become what they said you couldn't.",
+    "Don't let a bad day become a bad life.",
+    "Your best is still unwritten.",
+    "Win the next minute.",
+    "Step up.",
+    "Get after it.",
+    "Let your discipline speak.",
+    "Stay focused on the mission.",
+    "Momentum is built, not found.",
+    "Today matters.",
+    "Light the fire. Feed it daily.",
+    "Never give them the satisfaction.",
+    "Prove the critics wrong.",
+    "Make the doubters believers.",
+    "Do the thing you're afraid of.",
+    "Don't be busy. Be productive.",
+    "Show up when it's hard.",
+    "Earn your rest.",
+    "Make the struggle worth it.",
+    "Be the force.",
+    "Ambition is not a crime.",
+    "Every champion was once a contender.",
+    "The comeback is always stronger.",
+    "Be fearless in pursuit.",
+    "Commitment over convenience.",
+    "Don't flinch.",
+    "Persist until it's yours.",
+    "They can't stop what they can't see coming.",
+    "Build quietly. Arrive loudly.",
+    "Keep the vision. Adjust the plan.",
+    "You're one decision away.",
+    "Hard work speaks every language.",
+    "Be undeterred.",
+    "Turn pressure into performance.",
+    "Nothing worth having comes easy.",
+    "Stay ready so you don't have to get ready.",
+    "Live with intention.",
+    "Effort is the price of entry.",
+    "Become legendary.",
+    "Keep your eyes on the prize.",
+    "Prove your worth with action.",
+    "Act. Don't react.",
+    "Finish strong.",
+    "Never stop pushing.",
+    "The best views come after the hardest climbs.",
+    "Own your mornings.",
+    "Do it better than yesterday.",
+    "Greatness doesn't wait.",
+    "Keep climbing.",
+    "Make them remember your name.",
+    "You're stronger than your excuses.",
+    "Don't quit on a bad day.",
+    "Be proud of the work.",
+    "Don't give up what you want most for what you want now.",
+    "Rise above.",
+    "Write history.",
+    "No limits. Only plateaus.",
+    "Ignore the noise.",
+    "Victory is earned in the dark.",
+    "Get up. Dress up. Show up.",
+    "Be bold.",
+    "Today is not a rest day for dreams.",
+    "Train your mind like a muscle.",
+    "Be the hammer.",
+    "Discomfort is growth.",
+    "Build your own table.",
+    "The work is the shortcut.",
+    "Do it again. Better.",
+    "Make them say they were wrong.",
+    "Make history, not excuses.",
+    "Don't stop until you're proud.",
+    "Endurance wins.",
+    "Get stronger every day.",
+    "Keep showing up.",
+    "You have more in the tank.",
+    "Your vision is your fuel.",
+    "Let the grind define you.",
+    "Do it with fire.",
+    "They don't believe it yet. They will.",
+    "Prove that you belong.",
+    "Stay humble. Hustle hard.",
+    "Turn your hunger into habits.",
+    "Be committed, not interested.",
+    "Prepare like you're behind.",
+    "Win like you've done it before.",
+    "Keep the pressure on.",
+    "Don't wait for perfect.",
+    "Show what you're made of.",
+    "Become the standard.",
+    "Build your legacy.",
+    "Take the shot.",
+    "Never settle for less.",
+    "Every day, a little better.",
+    "Go hard or go home.",
+    "Make your effort impossible to question.",
+    "You are capable of more.",
+    "Strong is earned.",
+    "Don't follow the crowd. Lead it.",
+    "The pain you feel today is strength tomorrow.",
+    "Don't stop believing.",
+    "Do it with grit.",
+    "Chase greatness.",
+    "Grow through what you go through.",
+    "Eat the frog.",
+    "Get up and get going.",
+    "Make yourself unstoppable.",
+    "Never surrender.",
+    "Prove you're more than a maybe.",
+    "Stand your ground.",
+    "Do not go quietly.",
+    "Make it count.",
+    "Get it done.",
+    "Don't let fear decide.",
+    "Every second is a second chance.",
+    "Push your limits.",
+    "It's never too late to start.",
+    "Stay on track.",
+    "Be the comeback story.",
+    "Build momentum.",
+    "Stay true to your goals.",
+    "Work hard in silence.",
+    "Be the reason you win.",
+    "Strong mind. Strong body.",
+    "Train insane or remain the same.",
+    "Keep fighting.",
+    "They wrote you off. Rewrite it.",
+    "Keep your fire lit.",
+    "Chase your vision, not the money.",
+    "Don't look back. You're not going that way.",
+    "Fear less. Do more.",
+    "The grind never lies.",
+    "Believe. Then build.",
+    "Turn the page.",
+    "Fight for it.",
+    "Make your future proud.",
+    "Focus fuels progress.",
+    "Hard work beats excuses.",
+    "Don't stop now.",
+    "Run toward the challenge.",
+    "Show up for yourself.",
+    "Clock in.",
+    "No retreat.",
+    "Your effort is your signature.",
+    "Work until your idols become rivals.",
+    "Stay relentless.",
+    "The pressure is the point.",
+    "Every step forward counts.",
+    "Make your move.",
+    "Be brave enough to be bad at something new.",
+    "Every day you don't quit is a win.",
+    "Turn the impossible into the next step.",
+    "Stay steady.",
+    "Be your own competition.",
+    "Push harder than yesterday.",
+    "Keep your promises.",
+    "Never stop climbing.",
+    "Be patient with results, impatient with effort.",
+    "Strive for progress, not perfection.",
+    "Make your hours heavy.",
+    "There is no plan B.",
+    "Get comfortable with the work.",
+    "The goal is worth the grind.",
+    "Earn the right to be confident.",
+    "Stay focused. Stay hungry.",
+    "The dream is free. The hustle is sold separately.",
+    "Show them the receipts.",
+    "Keep stacking days.",
+    "No wasted minutes.",
+    "Learn. Adapt. Overcome.",
+    "Be fierce.",
+    "Don't just exist. Compete.",
+    "Go the extra mile. It's never crowded.",
+    "Hard work is never lucky.",
+    "Tune out the doubters.",
+    "Prove them wrong every morning.",
+    "Win the battle in your head.",
+    "Don't count yourself out.",
+    "Every no brings you closer.",
+    "Champions adjust.",
+    "Be built different.",
+    "Keep your standards high.",
+    "Doubt kills more dreams than failure.",
+    "Find a way.",
+    "Make a way.",
+    "Rise to the occasion.",
+    "Grind with grace.",
+    "Be the energy you want.",
+    "Become your own hero.",
+    "Stay disciplined when no one is watching.",
+    "Do the hard part.",
+    "Put in the hours.",
+    "Go beyond.",
+    "Be unshakable.",
+    "Make every day a statement.",
+    "Ambition has no age.",
+    "Mindset is everything.",
+    "Your story is still being written.",
+    "Don't wait. Create.",
+    "Turn your scars into stars.",
+    "The night is darkest before the win.",
+    "Make it real.",
+    "Choose progress.",
+    "Never stop moving.",
+    "Be loyal to your dreams.",
+    "Stop doubting. Start doing.",
+    "Effort first. Results follow.",
+    "Keep calm and keep going.",
+    "Prove your potential.",
+    "Every master was once a disaster.",
+    "Be great on purpose.",
+    "Let your actions answer.",
+    "Don't hope. Prepare.",
+    "Work harder than you did yesterday.",
+    "Stay unbothered. Stay building.",
+    "Execute.",
+    "Do not negotiate with your excuses.",
+    "The hill is the point.",
+    "Strong people are made, not born.",
+    "Stay the distance.",
+    "You don't find time. You make it.",
+    "Make them clap later.",
+    "Your grind is your proof.",
+    "Doubters fuel the drive.",
+    "Never give up on yourself.",
+    "Be the last one standing.",
+    "Change your habits. Change your life.",
+    "The more you sweat, the less you bleed.",
+    "Never back down.",
+    "Be legendary in your own way.",
+    "Your hunger will feed you.",
+    "One more mile.",
+    "Discipline is doing it anyway.",
+    "Grow stronger with every setback.",
+    "Small wins add up.",
+    "Embrace the grind.",
+    "Every day counts. Make it so.",
+    "Play the long game.",
+    "Don't settle for good enough.",
+    "Make your hustle heard.",
+    "Stay wild. Stay focused.",
+    "Finish what others won't start.",
+    "The harder the battle, the sweeter the victory.",
+    "Reach higher.",
+    "You were made to do hard things.",
+    "Be the person you needed.",
+    "Commit to the climb.",
+    "Stay sharp. Stay humble.",
+    "Show the world what you've got.",
+    "Push through the pain.",
+    "Never stop fighting for it.",
+    "Make your effort your legacy.",
+    "Let doubt fade into progress.",
+    "Earn every win.",
+    "No pressure, no diamonds.",
+    "Keep moving forward.",
+    "Run it back. Run it better.",
+    "Make every attempt count.",
+    "Prove them all wrong.",
+    "The clock is ticking. So should you.",
+    "Each decimal is a choice.",
+    "Time won't wait. Neither should you.",
+    "Watch the seconds. Then move.",
+    "Your age is rising. Is your effort?",
+    "Every tick is an invitation.",
+    "Spend this second wisely.",
+    "The numbers keep moving. Keep up.",
+    "This moment won't come back.",
+    "You'll never be younger than now. Start.",
+    "Time is running. Outrun it.",
+    "Look at the clock. Then get to work.",
+    "Another second gone. What did you build?",
+    "Seconds become years. Make them count.",
+    "The timer doesn't pause for doubt.",
+    "Life is measured in decimals. Use them.",
+    "Your time is your most valuable asset.",
+    "Every second is a fresh start.",
+    "Don't let the clock win.",
+    "Turn seconds into progress.",
+    "Time flies. You're the pilot.",
+    "The best time was yesterday. The next best is now.",
+    "This second is yours. Take it.",
+    "Look how fast it moves. Move faster.",
+    "You can't get time back. Invest it.",
+    "The countdown is real.",
+    "Make the next hour your best.",
+    "Time well spent is never lost.",
+    "Watch the clock, then beat it.",
+    "Use every second like it's rare. It is.",
+    "Don't kill time. It's killing you back.",
+    "Make the minutes matter.",
+    "Make time your ally.",
+    "The digits don't lie.",
+    "Your time is now. Not later.",
+    "Measure your life in effort, not hours.",
+    "A second wasted is a second gone.",
+    "This is the youngest you'll ever be. Go.",
+    "The clock rewards the brave.",
+    "Time is undefeated. Respect it.",
+    "Tick. Tock. Move.",
+    "Each heartbeat is another chance.",
+    "Life is short. Ambition shouldn't be.",
+    "Time is the canvas. Paint boldly.",
+    "Don't wait for the right time. Make it.",
+    "Hours are the bricks. Build something.",
+    "The present is a gift. Work it.",
+    "Make your decimals proud.",
+    "Time keeps score too.",
+    "Every minute is a vote for who you become.",
+    "Today is the deadline.",
+    "Stop scrolling. Start building.",
+    "Close the tab. Open the work.",
+    "Put the phone down. Pick the goal up.",
+    "Less talking. More doing.",
+    "Less planning. More acting.",
+    "Less waiting. More winning.",
+    "Make a plan. Then attack it.",
+    "Be early. Be ready. Be relentless.",
+    "Wake up hungry.",
+    "Go to bed proud.",
+    "Sleep on it, then crush it.",
+    "Do one hard thing today.",
+    "Do one thing that scares you.",
+    "Take one step. Then another.",
+    "Finish one thing today.",
+    "Today, be one percent better.",
+    "One percent a day changes everything.",
+    "Begin anyway.",
+    "Starting is the hardest part. Start.",
+    "The first step is a decision.",
+    "Begin where you are.",
+    "Use what you have.",
+    "Do what you can.",
+    "Start small. Think big.",
+    "Go now.",
+    "Ready is a myth. Go.",
+    "Perfect is the enemy of done.",
+    "Done is better than perfect.",
+    "Ship it.",
+    "Make the call.",
+    "Send the email.",
+    "Write the first line.",
+    "Take the first rep.",
+    "Lace up.",
+    "Show up early.",
+    "Stay late.",
+    "Do the extra set.",
+    "Read one more page.",
+    "Go one more round.",
+    "Ask one more question.",
+    "Try one more time.",
+    "Once more, with feeling.",
+    "Again.",
+    "Keep at it.",
+    "Don't stop.",
+    "Hold on.",
+    "Keep the faith. Keep the work.",
+    "Believe in the work.",
+    "Trust your training.",
+    "Trust yourself.",
+    "Back yourself.",
+    "Have your own back.",
+    "Be on your own side.",
+    "Be your biggest fan.",
+    "Be your toughest coach.",
+    "Coach yourself up.",
+    "Talk to yourself like a winner.",
+    "Mind your inner voice.",
+    "Your thoughts become your results.",
+    "Think like a finisher.",
+    "Think like a champion.",
+    "Train like an underdog.",
+    "Compete like a champion.",
+    "Recover like a pro.",
+    "Live like you mean it.",
+    "Work like it matters. It does.",
+    "Fight like you've already won.",
+    "Prepare like it's the final.",
+    "Play to win, not to avoid losing.",
+    "Swing for the fences.",
+    "Aim higher than they expect.",
+    "Shoot for the impossible.",
+    "Be the long shot that lands.",
+    "Bet on the underdog. Be the underdog.",
+    "Love being underestimated.",
+    "Underestimate me. That'll be fun.",
+    "They counted you out. Count them in.",
+    "Let them talk. Keep walking.",
+    "Let them wonder.",
+    "Let them watch you win.",
+    "Let them see the result, not the plan.",
+    "Keep your plans quiet.",
+    "Your goals don't need an audience.",
+    "Grow quietly.",
+    "Prove it quietly.",
+    "Win quietly. Celebrate loudly.",
+    "Be humble in victory.",
+    "Be gracious in defeat. Then come back.",
+    "Learn from losing.",
+    "Losses are lessons.",
+    "Failure is feedback.",
+    "Fail forward.",
+    "Fail fast. Learn faster.",
+    "Mistakes mean you're trying.",
+    "Mistakes are proof of effort.",
+    "Falling is part of rising.",
+    "Bruises heal. Regret doesn't.",
+    "Scars tell stories.",
+    "Wear your struggle with pride.",
+    "Every setback is data.",
+    "Rejection is redirection.",
+    "A no is just a not yet.",
+    "Not yet is not never.",
+    "Detours aren't dead ends.",
+    "The road bends. Keep driving.",
+    "Slow progress is still progress.",
+    "Progress, not perfection.",
+    "Inch by inch.",
+    "Brick by brick.",
+    "Day by day.",
+    "Rep by rep.",
+    "Step by step.",
+    "Mile by mile.",
+    "Page by page.",
+    "Line by line.",
+    "Little by little, then all at once.",
+    "Compound your effort.",
+    "Interest grows. So do you.",
+    "Habits are destiny.",
+    "Routine builds results.",
+    "Systems beat goals.",
+    "Make it a ritual.",
+    "Protect your routine.",
+    "Guard your focus.",
+    "Defend your time.",
+    "Say no to the noise.",
+    "Say yes to the work.",
+    "Cut the distractions.",
+    "Deep work. Deep results.",
+    "Focus is a superpower.",
+    "Attention is your currency.",
+    "Where focus goes, energy flows.",
+    "Concentrate your fire.",
+    "One thing at a time.",
+    "Do less, but better.",
+    "Clarity is power.",
+    "Know your why.",
+    "Remember why you started.",
+    "Your why is bigger than your fear.",
+    "Never forget what you're fighting for.",
+    "Purpose over pleasure.",
+    "Meaning over comfort.",
+    "Values over vibes.",
+    "Standards over feelings.",
+    "Discipline over desire.",
+    "Action over anxiety.",
+    "Courage over certainty.",
+    "Grit over glamour.",
+    "Substance over style.",
+    "Process over outcome.",
+    "Effort over ego.",
+    "Work over worry.",
+    "Faith over fear.",
+    "Growth over comfort.",
+    "Legacy over likes.",
+    "Proof over promises.",
+    "Do, don't debate.",
+    "Build, don't brag.",
+    "Act, don't announce.",
+    "Earn, don't expect.",
+    "Lead, don't follow.",
+    "Create, don't compete.",
+    "Rise, don't rest.",
+    "Push, don't pause.",
+    "Climb, don't complain.",
+    "Grind, don't whine.",
+    "Fight, don't fold.",
+    "Adapt, don't quit.",
+    "Evolve, don't stall.",
+    "Learn, don't stagnate.",
+    "Move, don't wait.",
+    "Stay hungry. Stay foolish.",
+    "Hungry dogs run faster.",
+    "Starve your doubts.",
+    "Feed your ambition.",
+    "Fuel your fire.",
+    "Stoke the flame.",
+    "Keep the fire burning.",
+    "Be a spark.",
+    "Burn bright.",
+    "Ignite.",
+    "Be electric.",
+    "Be magnetic.",
+    "Be undeniable in every room.",
+    "Walk in like you belong.",
+    "You belong here.",
+    "Take up space.",
+    "Claim your seat.",
+    "Own the room.",
+    "Own your story.",
+    "Own your mistakes.",
+    "Own your progress.",
+    "Own the outcome.",
+    "Take responsibility. Take control.",
+    "Control the controllables.",
+    "Your attitude is your choice.",
+    "Your effort is your choice.",
+    "Choose courage.",
+    "Choose discipline.",
+    "Choose growth.",
+    "Choose to rise.",
+    "Choose yourself.",
+    "Pick yourself up.",
+    "Dust off. Go again.",
+    "Reset. Refocus. Restart.",
+    "Recharge, don't retire.",
+    "Rest, then return stronger.",
+    "Pause, don't stop.",
+    "Breathe. Then attack.",
+    "Stay calm. Stay deadly.",
+    "Calm mind. Fierce heart.",
+    "Ice in your veins.",
+    "Steel in your spine.",
+    "Fire in your eyes.",
+    "Heart over hype.",
+    "All heart.",
+    "Full send.",
+    "No half measures.",
+    "All gas, no brakes.",
+    "No ceiling.",
+    "No limits.",
+    "No fear.",
+    "No excuses.",
+    "No quit.",
+    "No mercy on your weaknesses.",
+    "No surrender to comfort.",
+    "Nothing to lose. Everything to prove.",
+    "Everything to gain.",
+    "Prove it.",
+    "Earn your place.",
+    "Earn your stripes.",
+    "Earn the title.",
+    "Earn the respect.",
+    "Earn the silence of your critics.",
+    "Make your critics quiet.",
+    "Make your haters curious.",
+    "Haters are confused admirers. Confuse them more.",
+    "Doubters are free motivation.",
+    "Use the doubt.",
+    "Weaponize your setbacks.",
+    "Turn pain into power.",
+    "Turn anger into ambition.",
+    "Turn fear into focus.",
+    "Turn hurt into hunger.",
+    "Turn nervous into ready.",
+    "Turn dreams into plans.",
+    "Turn plans into action.",
+    "Turn action into habit.",
+    "Turn habit into identity.",
+    "Become who you're meant to be.",
+    "Be who you said you'd be.",
+    "Do what you said you'd do.",
+    "Keep your word.",
+    "Your word is your bond.",
+    "Integrity is doing it right when no one's looking.",
+    "Be honest about your effort.",
+    "Effort doesn't lie.",
+    "The mirror knows.",
+    "Answer to yourself.",
+    "Be someone your younger self would admire.",
+    "Make your parents proud. Make yourself prouder.",
+    "Honor the people who believed in you.",
+    "Prove the believers right.",
+    "Reward their faith.",
+    "Pay it forward.",
+    "Lift others as you climb.",
+    "Win together.",
+    "Iron sharpens iron.",
+    "Surround yourself with doers.",
+    "Run with the hungry.",
+    "Find your people. Build together.",
+    "Be the teammate you want.",
+    "Lead by example.",
+    "Set the pace.",
+    "Set the tone.",
+    "Raise the bar.",
+    "Become the benchmark.",
+    "Be the blueprint.",
+    "Be the reference point.",
+    "Be the one they study.",
+    "Leave a mark.",
+    "Leave it better.",
+    "Leave a legacy.",
+    "Be remembered for your effort.",
+    "Make it worth remembering.",
+    "Live a life worth telling.",
+    "Write a story worth reading.",
+    "Be the main character.",
+    "Your chapter starts now.",
+    "New day. New chance.",
+    "New week. Same hunger.",
+    "New month. New proof.",
+    "New year. Old fire.",
+    "Fresh start. Same standards.",
+    "Every morning is a reset.",
+    "Every night is a review.",
+    "Reflect. Then improve.",
+    "Review your day. Win tomorrow.",
+    "Tomorrow starts tonight.",
+    "Prepare tonight. Dominate tomorrow.",
+    "Lay out the plan. Then live it.",
+    "Win the hour.",
+    "Win the rep.",
+    "Win the moment.",
+    "Win the week.",
+    "Win the season.",
+    "Win the decade.",
+    "Win the long game.",
+    "You didn't come this far to only come this far.",
+    "Hard is not impossible.",
+    "The struggle is where the story gets good.",
+    "You're allowed to outgrow their expectations.",
+    "Be too busy improving to criticize.",
+    "Doubt your doubts.",
+    "Fear is loud. Ambition is louder.",
+    "Go where the work is.",
+    "Comfort zones are beautiful. Nothing grows there.",
+    "Sweat now. Smile later.",
+    "Be patient. Be persistent. Be prepared.",
+    "The sun rises for those who rise.",
+    "Be the first in and the last out.",
+    "Your discipline is your edge.",
+    "Talent opens doors. Work keeps them open.",
+    "Talent is common. Discipline is rare.",
+    "Be rare.",
+    "Be the one percent.",
+    "Stand out by showing up.",
+    "Don't blend in.",
+    "Refuse to be ordinary.",
+    "Refuse to quit.",
+    "Refuse to shrink.",
+    "Refuse to settle.",
+    "Refuse to be forgotten.",
+    "Make waves.",
+    "Shake the table.",
+    "Break the mold.",
+    "Break your own records.",
+    "Beat your best.",
+    "Set a new personal best.",
+    "Chase your ceiling. Then raise it.",
+    "Outgrow yesterday.",
+    "Be better than your last attempt.",
+    "The old you can't keep up.",
+    "Level up.",
+    "Upgrade your habits.",
+    "Upgrade your circle.",
+    "Upgrade your thinking.",
+    "Think bigger.",
+    "Dream louder.",
+    "Act bolder.",
+    "Move smarter.",
+    "Work deeper.",
+    "Rest wiser.",
+    "Love the process.",
+    "Fall in love with the work.",
+    "Romanticize the grind.",
+    "Enjoy the climb.",
+    "Respect the journey.",
+    "Honor the process.",
+    "Trust the timing. Do the work.",
+    "Good things take time. Great things take work.",
+    "Patience and persistence.",
+    "Wait for nothing. Work for everything.",
+    "Make luck irrelevant.",
+    "Luck is preparation meeting opportunity.",
+    "Create your own luck.",
+    "Create your own chances.",
+    "Open your own doors.",
+    "Build your own ladder.",
+    "Pave your own road.",
+    "Draw your own map.",
+    "Be your own boss.",
+    "Be your own proof.",
+    "No one can do it for you.",
+    "It's on you. That's the good news.",
+    "You hold the pen.",
+    "You hold the keys.",
+    "Take the wheel.",
+    "Drive your life.",
+    "Steer toward the hard thing.",
+    "Head into the wind.",
+    "Swim upstream.",
+    "Run uphill.",
+    "Climb the steepest side.",
+    "Lift heavier.",
+    "Push further.",
+    "Reach further.",
+    "Go deeper.",
+    "Stay longer.",
+    "Try harder.",
+    "Care more.",
+    "Want it badly enough.",
+    "How bad do you want it?",
+    "Prove how much you want it.",
+    "Desire is not enough. Do.",
+    "Wanting isn't working.",
+    "Intentions don't count. Actions do.",
+    "Talk is cheap. Results are priceless.",
+    "Plans are free. Execution costs effort.",
+    "Pay the price.",
+    "The price of greatness is responsibility.",
+    "Sacrifice now. Celebrate later.",
+    "Delay gratification.",
+    "Choose long-term wins.",
+    "Think in decades.",
+    "Act in days.",
+    "Focus on today. Aim for forever.",
+    "Keep your long-term vision.",
+    "Hold the vision tight.",
+    "See it. Believe it. Build it.",
+    "Visualize. Then execute.",
+    "Picture the finish. Then run.",
+    "Your future is built today.",
+    "Today's choices are tomorrow's life.",
+    "Small choices, big outcomes.",
+    "Decide. Commit. Succeed.",
+    "Make the decision. Then make it right.",
+    "Indecision is a decision to lose.",
+    "Hesitation kills dreams.",
+    "Move before you're sure.",
+    "Bold moves only.",
+    "Fortune favors the bold.",
+    "Dare greatly.",
+    "Risk it.",
+    "Leap.",
+    "Jump and build your wings on the way down.",
+    "Take the chance.",
+    "What if it works?",
+    "Imagine if you didn't quit.",
+    "Imagine what you'll become.",
+    "Become the person who finishes.",
+    "Be a closer.",
+    "Close the gap.",
+    "Close strong.",
+    "Seal the deal.",
+    "Bring it home.",
+    "Stick the landing.",
+    "Hit your mark.",
+    "Hit the target.",
+    "Make the shot.",
+    "Score.",
+    "Deliver.",
+    "Perform.",
+    "Produce.",
+    "Achieve.",
+    "Accomplish.",
+    "Conquer.",
+    "Dominate.",
+    "Overcome.",
+    "Persevere.",
+    "Endure.",
+    "Thrive."
+  ];
+
+  // ---------- Elementi ----------
+  const $ = (id) => document.getElementById(id);
+  const setup = $("setup"), timer = $("timer"), corner = $("corner");
+  const ageEl = $("age"), phraseEl = $("phrase");
+  const form = $("dobForm"), dateIn = $("dobDate"), timeIn = $("dobTime");
+  const themeBtn = $("themeBtn"), resetBtn = $("resetBtn");
+  const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  // ---------- Storage sicuro ----------
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+  let memDob = null; // fallback se localStorage non è disponibile
+
+  // ---------- Tema: auto (sistema) / chiaro / scuro ----------
+  const THEMES = ["auto", "light", "dark"];
+  let theme = store.get("ptw-theme") || "auto";
+  function applyTheme() {
+    if (theme === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", theme);
+    themeBtn.textContent = theme === "auto" ? "Auto" : theme === "light" ? "Light" : "Dark";
+  }
+  themeBtn.addEventListener("click", () => {
+    theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
+    store.set("ptw-theme", theme);
+    applyTheme();
+  });
+  applyTheme();
+
+  // ---------- Timer: 9 decimali come la reference ----------
+  const YEAR_MS = 31556900000; // stessa costante dell'age-timer
+  let dob = null, rafId = null, lastText = "";
+
+  function renderAge() {
+    const years = (Date.now() - dob) / YEAR_MS;
+    const parts = Math.max(0, years).toFixed(9).split(".");
+    const text = parts[0] + "." + parts[1];
+    if (text !== lastText) {
+      ageEl.innerHTML = parts[0] + "<sup>." + parts[1] + "</sup>";
+      lastText = text;
+    }
+    rafId = requestAnimationFrame(renderAge);
+  }
+
+  // ---------- Frasi: typing stile why.com ----------
+  let bag = [], typingTimer = null, holdTimer = null, current = "";
+
+  function nextPhrase() {
+    if (!bag.length) {
+      bag = PHRASES.slice();
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+      }
+      if (bag[bag.length - 1] === current && bag.length > 1) {
+        [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];
+      }
+    }
+    current = bag.pop();
+    return current;
+  }
+
+  function stopPhrases() {
+    clearTimeout(typingTimer);
+    clearTimeout(holdTimer);
+  }
+
+  function scheduleNext() {
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(showPhrase, 4600);
+  }
+
+  function typePhrase(text) {
+    const chars = Array.from(text);
+    const pace = Math.max(25, Math.min(52, 1450 / Math.max(1, chars.length)));
+    let i = 0;
+    phraseEl.textContent = "";
+    phraseEl.classList.add("is-typing");
+    const step = () => {
+      if (i >= chars.length) {
+        phraseEl.textContent = text;
+        phraseEl.classList.remove("is-typing");
+        scheduleNext();
+        return;
+      }
+      const c = chars[i++];
+      phraseEl.textContent += c;
+      typingTimer = setTimeout(step, pace * (/[?!.:;,]/.test(c) ? 2.2 : 1));
+    };
+    typingTimer = setTimeout(step, 220);
+  }
+
+  function showPhrase() {
+    stopPhrases();
+    const text = nextPhrase();
+    if (REDUCED.matches) {
+      phraseEl.textContent = text;
+      phraseEl.classList.remove("is-typing");
+      scheduleNext();
+    } else {
+      typePhrase(text);
+    }
+  }
+
+  phraseEl.addEventListener("click", showPhrase);
+  document.addEventListener("keydown", (e) => {
+    if (timer.hidden) return;
+    if (e.code === "Space" || e.code === "ArrowRight") { e.preventDefault(); showPhrase(); }
+  });
+
+  // ---------- Viste ----------
+  function startTimer() {
+    setup.hidden = true;
+    timer.hidden = false;
+    corner.hidden = false;
+    cancelAnimationFrame(rafId);
+    lastText = "";
+    renderAge();
+    showPhrase();
+  }
+
+  function showSetup() {
+    cancelAnimationFrame(rafId);
+    stopPhrases();
+    timer.hidden = true;
+    corner.hidden = false;
+    resetBtn.hidden = true;
+    setup.hidden = false;
+    dateIn.max = new Date().toISOString().slice(0, 10);
+    dateIn.focus();
+  }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!dateIn.value) return;
+    const [y, m, d] = dateIn.value.split("-").map(Number);
+    const [hh, mm] = (timeIn.value || "00:00").split(":").map(Number);
+    const value = new Date(y, m - 1, d, hh || 0, mm || 0).getTime();
+    if (!isFinite(value) || value > Date.now()) return;
+    dob = value;
+    memDob = value;
+    store.set("ptw-dob", String(value));
+    resetBtn.hidden = false;
+    startTimer();
+  });
+
+  resetBtn.addEventListener("click", () => {
+    store.del("ptw-dob");
+    memDob = null;
+    showSetup();
+  });
+
+  // ---------- Avvio ----------
+  const saved = parseInt(store.get("ptw-dob") || memDob, 10);
+  if (isFinite(saved)) { dob = saved; startTimer(); }
+  else showSetup();
+})();
+</script>
+</body>
+</html>
