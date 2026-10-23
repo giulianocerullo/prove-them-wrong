@@ -4,7 +4,7 @@ A timer that shows your age in years with 9 decimal places, paired with motivati
 
 ## How to use
 
-1. Open `prove-them-wrong.html` in any browser.
+1. Open `index.html` in any browser.
 2. Enter your date of birth (time is optional) and press **Start**.
 3. The timer starts and the phrases begin to appear.
 
